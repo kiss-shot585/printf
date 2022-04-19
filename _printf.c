@@ -1,105 +1,86 @@
 #include "main.h"
 #include <stdarg.h>
+#include <stddef.h>
+
 /**
- * print_character - prints character
- * @arg: va_list parameter
- * Description: print character
- * Return: 1
+ * get_op - select function for conversion char
+ * @c: char to check
+ * Return: pointer to function
  */
-int print_character(va_list arg)
+
+int (*get_op(const char c))(va_list)
 {
-	int i;
+	int i = 0;
 
-	i = va_arg(arg, int);
-	_putchar(i);
-
-	return (1);
-}
-/**
- * print_sign - print sign
- * @arg: va_list parameter
- * @base: base 10, 8, 16, 2 etc..
- * Description: print numbers and signed
- * Return: num of characters
- */
-int print_sign(va_list arg, int base)
-{
-	int i = 0, cont = 0;
-	char *s;
-
-	i = va_arg(arg, int);
-	if (i < 0)
+	flags_p fp[] = {
+		{"c", print_char},
+		{"s", print_str},
+		{"i", print_nbr},
+		{"d", print_nbr},
+		{"b", print_binary},
+		{"o", print_octal},
+		{"x", print_hexa_lower},
+		{"X", print_hexa_upper},
+		{"u", print_unsigned},
+		{"S", print_str_unprintable},
+		{"r", print_str_reverse},
+		{"p", print_ptr},
+		{"R", print_rot13},
+		{"%", print_percent}
+	};
+	while (i < 14)
 	{
-		i = -(i);
-		_putchar('-');
-		cont += 1;
+		if (c == fp[i].c[0])
+		{
+			return (fp[i].f);
+		}
+		i++;
 	}
-	s = convert_to("0123456789ABCDEF", i, base);
-	_puts(s);
-	cont += _strlen(s);
-	return (cont);
+	return (NULL);
 }
+
 /**
- * print_unsign - print_unsign
- * @arg: va_list parameter
- * @base: base 10, 8, 16 etc..
- * Description: print numbers without signed
- * Return: num of characters
+ * _printf - Reproduce behavior of printf function
+ * @format: format string
+ * Return: value of printed chars
  */
-int print_unsign(va_list arg, int base)
+
+int _printf(const char *format, ...)
 {
-	int cont = 0;
-	unsigned int i;
-	char *s;
+	va_list ap;
+	int sum = 0, i = 0;
+	int (*func)();
 
-	i = va_arg(arg, unsigned int);
-	s = convert_to("0123456789ABCDEF", i, base);
-	_puts(s);
-	cont = _strlen(s);
+	if (!format || (format[0] == '%' && format[1] == '\0'))
+		return (-1);
+	va_start(ap, format);
 
-	return (cont);
-
-}
-/**
- * print_string - print string
- * @arg: va_list parameter
- * Description: print string
- * Return: num of characters
- */
-int print_string(va_list arg)
-{
-	char *s;
-	int cont = 0;
-
-	s = va_arg(arg, char *);
-	if (!s)
+	while (format[i])
 	{
-		s = "(null)";
-		_puts(s);
-
-		return (_strlen(s));
+		if (format[i] == '%')
+		{
+			if (format[i + 1] != '\0')
+				func = get_op(format[i + 1]);
+			if (func == NULL)
+			{
+				_putchar(format[i]);
+				sum++;
+				i++;
+			}
+			else
+			{
+				sum += func(ap);
+				i += 2;
+				continue;
+			}
+		}
+		else
+		{
+			_putchar(format[i]);
+			sum++;
+			i++;
+		}
 	}
-	_puts(s);
-	cont = _strlen(s);
-	return (cont);
-}
-/**
- * print_base16_upper_lower - print_base16_upper_lower
- * @arg: va_list parameter
- *@representation: pointer parameter
- * Description: This function takes 0123456789ABCDEF or 0123456789abcdef
- * in representation parameter for print hexadecimal format
- * Return: num of characters
- */
-int print_base16_upper_lower(va_list arg, char *representation)
-{
-	unsigned int i = 0, cont = 0;
-	char *s;
-
-	i = va_arg(arg, unsigned int);
-	s = convert_to(representation, i, 16);
-	_puts(s);
-	cont = _strlen(s);
-	return (cont);
-
+	va_end(ap);
+	return (sum);
 }
